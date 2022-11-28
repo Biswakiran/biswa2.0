@@ -1,20 +1,30 @@
-import React, { Component } from 'react';
+import React, {useState, Component } from 'react';
 import { withGoogleMap, GoogleMap, withScriptjs, InfoWindow, Marker } from "react-google-maps";
 import Geocode from "react-geocode";
-import Autocomplete from 'react-google-autocomplete';
+import Autocomplete from "react-google-autocomplete";
 import { GoogleMapsAPI } from '../client-config';
+import  Axios  from 'axios';
 Geocode.setApiKey( GoogleMapsAPI );
 Geocode.enableDebug();
 
 class Map extends Component{
 
+
+
+	
+
 	constructor( props ){
 		super( props );
 		this.state = {
+			name:'',
+			email:'',
 			address: '',
 			city: '',
 			area: '',
 			state: '',
+			lat:'',
+			lng:'',
+
 			mapPosition: {
 				lat: this.props.center.lat,
 				lng: this.props.center.lng
@@ -24,7 +34,11 @@ class Map extends Component{
 				lng: this.props.center.lng
 			}
 		}
+		this.handlesubmit=this.handlesubmit.bind(this);
 	}
+     
+	
+
 	/**
 	 * Get the current address from the default map position and set those values in the state
 	 */
@@ -33,17 +47,25 @@ class Map extends Component{
 			response => {
 				const address = response.results[0].formatted_address,
 				      addressArray =  response.results[0].address_components,
+					  name=this.state,
+			          email=this.state,
+					  lat=this.lat,
+					  lng=this.lng,
 				      city = this.getCity( addressArray ),
 				      area = this.getArea( addressArray ),
 				      state = this.getState( addressArray );
 
-				console.log( 'city', city, area, state );
+				// console.log( 'city', city, area, state );
 
 				this.setState( {
 					address: ( address ) ? address : '',
 					area: ( area ) ? area : '',
 					city: ( city ) ? city : '',
 					state: ( state ) ? state : '',
+					name:(name) ? name:'',
+			        email:(email) ? email:'',
+					lat:(lat) ? lat:'',
+					lng:(lng) ? lng:'',
 				} )
 			},
 			error => {
@@ -153,6 +175,8 @@ class Map extends Component{
 			response => {
 				const address = response.results[0].formatted_address,
 				      addressArray =  response.results[0].address_components,
+					//   name=this.state,
+			        //   email=this.state,
 				      city = this.getCity( addressArray ),
 				      area = this.getArea( addressArray ),
 				      state = this.getState( addressArray );
@@ -161,6 +185,10 @@ class Map extends Component{
 					area: ( area ) ? area : '',
 					city: ( city ) ? city : '',
 					state: ( state ) ? state : '',
+					// name:(name) ? name:'',
+			        // email:(email) ? email:'',
+					lat:(newLat) ? newLat:'',
+					lng:(newLng) ? newLng:'',
 					markerPosition: {
 						lat: newLat,
 						lng: newLng
@@ -182,9 +210,11 @@ class Map extends Component{
 	 * @param place
 	 */
 	onPlaceSelected = ( place ) => {
-		console.log( 'plc', place );
+		// console.log( 'plc', place );
 		const address = place.formatted_address,
 		      addressArray =  place.address_components,
+			  name=this.state,
+			  email=this.state,
 		      city = this.getCity( addressArray ),
 		      area = this.getArea( addressArray ),
 		      state = this.getState( addressArray ),
@@ -196,6 +226,11 @@ class Map extends Component{
 			area: ( area ) ? area : '',
 			city: ( city ) ? city : '',
 			state: ( state ) ? state : '',
+			lat: (latValue) ? latValue:'',
+			lng: (latValue) ? latValue:'',
+			name:(name) ? name:'',
+			email:(email) ? email:'',
+
 			markerPosition: {
 				lat: latValue,
 				lng: lngValue
@@ -206,6 +241,52 @@ class Map extends Component{
 			},
 		})
 	};
+      
+
+
+	async handlesubmit(event){
+		event.preventDefault();
+		const{name,email,address,city,state,area,lat,lng}=this.state;
+		const formData = {
+			name:name,
+			area:area,
+			city:city,
+			state:state,
+			email:email,
+			address:address,
+			lat:lat,
+			lng:lng,
+		}
+		// console.log(formData);
+		// const instance = axios.create({
+		// 	baseURL: 'https://localhost:6000/api',
+		// 	timeout: 1000,
+		// 	headers: {'X-Custom-Header': 'foobar'}
+		//   });
+
+		  Axios.get('/requests/all').then((res)=>{
+			console.log(res)
+		  }).catch((err)=>{
+			console.log(err)
+		  })
+
+console.log(formData);
+		  
+		  Axios.post('/requests/add', formData)
+		  .then(function (response) {
+			console.log(response);
+		  })
+		  .catch(function (error) {
+			console.log(error);
+		  });
+		//   const all = await axios.get('http://localhost:6000/api/requests/all');
+		//   console.log(all);
+	}
+     
+	// const[user,setUser]= useState({
+    //    name:'',
+	//    mail:''
+	// });
 
 
 	render(){
@@ -251,8 +332,28 @@ class Map extends Component{
 		);
 		let map;
 		if( this.props.center.lat !== undefined ) {
-			map = <div>
+			map =
+			<form onSubmit={this.handlesubmit}>
+			<div >
 				<div>
+					<h1 className='r-heading'>Request & Report service</h1>
+				<div className="form-group">
+						<label htmlFor="">Name</label>
+						<input type="text" name="name" className="form-control"onChange={ this.onChange }value={ this.name } />
+					</div>
+					<div className="form-group">
+						<label htmlFor="">E-mail</label>
+						<input type="text" name="email" className="form-control" onChange={ this.onChange } value={ this.email}/>
+					</div>
+					<div className="form-group">
+						<label htmlFor="">Lat</label>
+						<input type="text" name="lat" className="form-control"onChange={ this.onChange }readOnly="readOnly" value={ this.state.lat }/>
+					</div>
+					<div className="form-group">
+						<label htmlFor="">Long</label>
+						<input type="text" name="lng" className="form-control"onChange={ this.onChange } readOnly="readOnly" value={ this.state.lng }/>
+					</div>
+
 					<div className="form-group">
 						<label htmlFor="">City</label>
 						<input type="text" name="city" className="form-control" onChange={ this.onChange } readOnly="readOnly" value={ this.state.city }/>
@@ -269,7 +370,9 @@ class Map extends Component{
 						<label htmlFor="">Address</label>
 						<input type="text" name="address" className="form-control" onChange={ this.onChange } readOnly="readOnly" value={ this.state.address }/>
 					</div>
+					
 				</div>
+				
 
 				<AsyncMap
 					googleMapURL={`https://maps.googleapis.com/maps/api/js?key=${GoogleMapsAPI}&libraries=places`}
@@ -282,12 +385,20 @@ class Map extends Component{
 					mapElement={
 						<div style={{ height: `100%` }} />
 					}
-				/>
+				/>	
 			</div>
+			<div className='md-col-12'>
+                       <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+			
+			</form>
+			
 		} else {
 			map = <div style={{height: this.props.height}} />
 		}
 		return( map )
+		
 	}
+	
 }
 export default Map
